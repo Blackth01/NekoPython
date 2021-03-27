@@ -29,6 +29,7 @@ class ShapedFrame(wx.Frame):
         self.last_index = 1
         self.last_time = time()
         self.stop = False
+        self.thread = None
 
         self.SetWindowShape()
 
@@ -37,6 +38,11 @@ class ShapedFrame(wx.Frame):
         self.Bind(wx.EVT_RIGHT_UP, self.OnExit)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_WINDOW_CREATE, self.SetWindowShape)
+        
+        thread = threading.Thread(target = self.follow_mouse)
+        thread.setDaemon(True)
+        thread.start()        
+        
 
     def SetWindowShape(self, evt=None):
         r = wx.Region(self.bmp)
@@ -46,10 +52,6 @@ class ShapedFrame(wx.Frame):
         dc = wx.PaintDC(self)
         dc.Clear()
         dc.DrawBitmap(self.bmp, 0,0, True)
-        #Runs thread
-        thread = threading.Thread(target = self.follow_mouse)
-        thread.setDaemon(True)
-        thread.start()
 
     def OnLeftUp(self, evt):
         if(self.stop):
