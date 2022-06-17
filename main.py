@@ -17,7 +17,9 @@ if(len(sys.argv) > 1):
 else:
     character = "neko"
 
-if(character != "neko" and character != "bear"):
+available_characters = ["neko", "bear"]
+
+if(character not in character):
     character = "neko"
 
 AWAKE_PNG = 'sprites/{}/awake'.format(character)
