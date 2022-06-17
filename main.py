@@ -1,7 +1,7 @@
 import sys
 
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QPixmap, QCursor
+from PyQt5.QtGui import QPixmap, QCursor, QIcon
 from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow
 from time import sleep, time
 from os import environ
@@ -38,6 +38,8 @@ class Window(QMainWindow):
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WA_NoSystemBackground, True)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setWindowIcon(QIcon(AWAKE_PNG+"1.png"))
+        self.setWindowTitle("{} screenmate".format(character.capitalize()))
 
         self.last_index = 1
         self.last_img = AWAKE_PNG
@@ -60,7 +62,7 @@ class Window(QMainWindow):
             else:
                 self.stop = True
         elif QMouseEvent.button() == Qt.RightButton:
-            self.close()
+            QTimer.singleShot(0, self.close)
 
     def changeImg(self, img_path):
         change_index = False
@@ -174,4 +176,6 @@ if __name__ == '__main__':
     timer.timeout.connect(lambda:process_events(window))
     timer.start(100)
 
-    input("Press enter to exit")
+    print("Left click on the {} for it to toggle cursor chasing".format(character))
+    print("Right click on the {} to close the application".format(character))
+    sys.exit(app.exec_())
