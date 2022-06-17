@@ -19,7 +19,7 @@ else:
 
 available_characters = ["neko", "bear"]
 
-if(character not in character):
+if(character not in available_characters):
     character = "neko"
 
 AWAKE_PNG = 'sprites/{}/awake'.format(character)
