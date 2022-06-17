@@ -6,19 +6,31 @@ from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow
 from time import sleep, time
 from os import environ
 
-AWAKE_PNG = 'sprites/awake'
-ASLEEP_PNG = 'sprites/asleep'
-LEFT_PNG = 'sprites/left'
-RIGHT_PNG = 'sprites/right'
-UP_PNG = 'sprites/up'
-DOWN_PNG = 'sprites/down'
-LEFT_UP_PNG = 'sprites/left_up'
-LEFT_DOWN_PNG = 'sprites/left_down'
-RIGHT_UP_PNG = 'sprites/right_up'
-RIGHT_DOWN_PNG = 'sprites/right_down'
-SCRATCH_PNG = 'sprites/scratch'
+SPEED = 7
 
-SPEED = 5
+if(len(sys.argv) > 1):
+    character = sys.argv[1]
+    if(len(sys.argv) > 2):
+        if(sys.argv[2].isdigit()):
+            SPEED = int(sys.argv[2])
+
+else:
+    character = "neko"
+
+if(character != "neko" and character != "bear"):
+    character = "neko"
+
+AWAKE_PNG = 'sprites/{}/awake'.format(character)
+ASLEEP_PNG = 'sprites/{}/asleep'.format(character)
+LEFT_PNG = 'sprites/{}/left'.format(character)
+RIGHT_PNG = 'sprites/{}/right'.format(character)
+UP_PNG = 'sprites/{}/up'.format(character)
+DOWN_PNG = 'sprites/{}/down'.format(character)
+LEFT_UP_PNG = 'sprites/{}/left_up'.format(character)
+LEFT_DOWN_PNG = 'sprites/{}/left_down'.format(character)
+RIGHT_UP_PNG = 'sprites/{}/right_up'.format(character)
+RIGHT_DOWN_PNG = 'sprites/{}/right_down'.format(character)
+SCRATCH_PNG = 'sprites/{}/scratch'.format(character)
 
 class Window(QMainWindow):
     def __init__(self):
