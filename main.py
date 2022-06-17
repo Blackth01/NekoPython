@@ -1,6 +1,10 @@
-import wx
-import threading
+import sys
+
+from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtGui import QPixmap, QCursor
+from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow
 from time import sleep, time
+from os import environ
 
 AWAKE_PNG = 'sprites/awake'
 ASLEEP_PNG = 'sprites/asleep'
@@ -14,115 +18,37 @@ RIGHT_UP_PNG = 'sprites/right_up'
 RIGHT_DOWN_PNG = 'sprites/right_down'
 SCRATCH_PNG = 'sprites/scratch'
 
-SPEED = 1
+SPEED = 5
 
-class ShapedFrame(wx.Frame):
+class Window(QMainWindow):
     def __init__(self):
-        wx.Frame.__init__(self, None, -1, "Neko", style = wx.FRAME_SHAPED | wx.STAY_ON_TOP)
+        super(Window, self).__init__()
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WA_NoSystemBackground, True)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
 
-        # Load the image
-        image = wx.Image(AWAKE_PNG+"1.png", wx.BITMAP_TYPE_PNG)            
-        self.bmp = wx.Bitmap(image)
-
-        self.is_running = True
-        self.last_img = AWAKE_PNG
         self.last_index = 1
+        self.last_img = AWAKE_PNG
         self.last_time = time()
         self.stop = False
-        self.thread = None
 
-        self.SetWindowShape()
+        label = QLabel(self)
+        pixmap = QPixmap("{}{}.png".format(AWAKE_PNG, self.last_index))
+        label.setPixmap(pixmap)
+        label.setGeometry(0, 0, pixmap.width(), pixmap.height())
 
-        self.SetClientSize((self.bmp.GetWidth(), self.bmp.GetHeight()))
-        self.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
-        self.Bind(wx.EVT_RIGHT_UP, self.OnExit)
-        self.Bind(wx.EVT_PAINT, self.OnPaint)
-        self.Bind(wx.EVT_WINDOW_CREATE, self.SetWindowShape)
-        
-        thread = threading.Thread(target = self.follow_mouse)
-        thread.setDaemon(True)
-        thread.start()        
-        
+        self.label = label
 
-    def SetWindowShape(self, evt=None):
-        r = wx.Region(self.bmp)
-        self.SetShape(r)
+        self.resize(pixmap.width(),pixmap.height())
 
-    def OnPaint(self, evt):
-        dc = wx.PaintDC(self)
-        dc.Clear()
-        dc.DrawBitmap(self.bmp, 0,0, True)
-
-    def OnLeftUp(self, evt):
-        if(self.stop):
-            self.stop = False
-        else:
-            self.stop = True
-    def OnExit(self, evt):
-        self.is_running = False
-        self.Close()
-
-    def follow_mouse(self):
-        while(True):
-            sleep(0.01)
-            if(not self.is_running):
-                break
-
-            objposition = self.GetPosition()
-            
+    def mousePressEvent(self, QMouseEvent):
+        if QMouseEvent.button() == Qt.LeftButton:
             if(self.stop):
-                mouseposition = lambda: None
-                mouseposition.x = 0
-                mouseposition.y = 0
+                self.stop = False
             else:
-                mouseposition = wx.GetMousePosition()
-
-            if(objposition.x == mouseposition.x and objposition.y == mouseposition.y):
-                if(self.stop):
-                    self.changeImg(SCRATCH_PNG)
-                else:
-                    self.changeImg(ASLEEP_PNG)
-                continue
-            elif(abs(objposition.x - mouseposition.x) < SPEED+1 and abs(objposition.y - mouseposition.y) < SPEED+1):
-                self.Move((mouseposition.x, mouseposition.y))
-                continue
-
-            if(abs(objposition.x - mouseposition.x) < SPEED+1):
-                x_direction = "e"
-            elif(objposition.x < mouseposition.x):
-                new_x = objposition.x+SPEED
-                x_direction = "r"
-            else:
-                new_x = objposition.x-SPEED
-                x_direction = "l"
-
-            if(abs(objposition.y - mouseposition.y) < SPEED+1):
-                y_direction = "e"
-            elif(objposition.y < mouseposition.y):
-                new_y = objposition.y+SPEED
-                y_direction = "u"
-            else:
-                new_y = objposition.y-SPEED
-                y_direction = "d"
-
-            if(x_direction == "e" and y_direction == "u"):
-                self.changeImg(DOWN_PNG)
-            elif(x_direction == "e" and y_direction == "d"):
-                self.changeImg(UP_PNG)
-            elif(x_direction == "r" and y_direction == "e"):
-                self.changeImg(RIGHT_PNG)
-            elif(x_direction == "l" and y_direction == "e"):
-                self.changeImg(LEFT_PNG)
-            elif(x_direction == "l" and y_direction == "u"):
-                self.changeImg(LEFT_DOWN_PNG)
-            elif(x_direction == "l" and y_direction == "d"):
-                self.changeImg(LEFT_UP_PNG)
-            elif(x_direction == "r" and y_direction == "u"):
-                self.changeImg(RIGHT_DOWN_PNG)
-            elif(x_direction == "r" and y_direction == "d"):
-                self.changeImg(RIGHT_UP_PNG)
-
-            self.Move((new_x, new_y))
+                self.stop = True
+        elif QMouseEvent.button() == Qt.RightButton:
+            self.close()
 
     def changeImg(self, img_path):
         change_index = False
@@ -136,14 +62,104 @@ class ShapedFrame(wx.Frame):
             self.last_time = current_time
 
         if(img_path != self.last_img or change_index):
-            image = wx.Image(img_path+str(self.last_index)+".png", wx.BITMAP_TYPE_PNG)
-            self.bmp = wx.Bitmap(image)
-            dc = wx.ClientDC(self)
-            dc.Clear()
-            dc.DrawBitmap(self.bmp, 0,0, True)
+            pixmap = QPixmap("{}{}.png".format(img_path, self.last_index))
+            self.label.setPixmap(pixmap)
+            self.label.setGeometry(0, 0, pixmap.width(), pixmap.height())
+            self.resize(pixmap.width(),pixmap.height())
             self.last_img = img_path
 
+def suppress_qt_warnings():
+    environ["QT_DEVICE_PIXEL_RATIO"] = "0"
+    environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+    environ["QT_SCREEN_SCALE_FACTORS"] = "1"
+    environ["QT_SCALE_FACTOR"] = "1"
+
+def process_events(window):
+    global min_x, min_y
+
+    #Getting window position
+    windowpos = window.pos()
+    objposition = lambda: None
+    objposition.x = windowpos.x()
+    objposition.y = windowpos.y()
+
+    #Getting cursor position
+    mouseposition = lambda: None
+    if(window.stop):
+        mouseposition.x = min_x
+        mouseposition.y = min_y
+    else:
+        cursorpos = QCursor.pos()
+        mouseposition.x = cursorpos.x()
+        mouseposition.y = cursorpos.y()
+
+    if(objposition.x == mouseposition.x and objposition.y == mouseposition.y):
+        if(window.stop):
+            window.changeImg(SCRATCH_PNG)
+        else:
+            window.changeImg(ASLEEP_PNG)
+        return
+    elif(abs(objposition.x - mouseposition.x) < SPEED+1 and abs(objposition.y - mouseposition.y) < SPEED+1):
+        window.move(mouseposition.x, mouseposition.y)
+        return
+
+    if(abs(objposition.x - mouseposition.x) < SPEED+1):
+        x_direction = "e"
+        new_x = objposition.x
+    elif(objposition.x < mouseposition.x):
+        new_x = objposition.x+SPEED
+        x_direction = "r"
+    else:
+        new_x = objposition.x-SPEED
+        x_direction = "l"
+
+    if(abs(objposition.y - mouseposition.y) < SPEED+1):
+        y_direction = "e"
+        new_y = objposition.y
+    elif(objposition.y < mouseposition.y):
+        new_y = objposition.y+SPEED
+        y_direction = "u"
+    else:
+        new_y = objposition.y-SPEED
+        y_direction = "d"
+
+    if(x_direction == "e" and y_direction == "u"):
+        window.changeImg(DOWN_PNG)
+    elif(x_direction == "e" and y_direction == "d"):
+        window.changeImg(UP_PNG)
+    elif(x_direction == "r" and y_direction == "e"):
+        window.changeImg(RIGHT_PNG)
+    elif(x_direction == "l" and y_direction == "e"):
+        window.changeImg(LEFT_PNG)
+    elif(x_direction == "l" and y_direction == "u"):
+        window.changeImg(LEFT_DOWN_PNG)
+    elif(x_direction == "l" and y_direction == "d"):
+        window.changeImg(LEFT_UP_PNG)
+    elif(x_direction == "r" and y_direction == "u"):
+        window.changeImg(RIGHT_DOWN_PNG)
+    elif(x_direction == "r" and y_direction == "d"):
+        window.changeImg(RIGHT_UP_PNG)
+
+    window.move(new_x, new_y)
+
+
 if __name__ == '__main__':
-    app = wx.App()
-    ShapedFrame().Show()
-    app.MainLoop()
+    suppress_qt_warnings()
+
+    app = QApplication(sys.argv)
+
+    screen = app.primaryScreen()
+    size = screen.size()
+    rect = screen.availableGeometry()
+    min_x =  size.width() - rect.width()
+    min_y =  size.height() - rect.height()
+
+    window = Window()
+
+    window.show()
+
+    timer = QTimer()
+    timer.timeout.connect(lambda:process_events(window))
+    timer.start(100)
+
+    input("Press enter to exit")
